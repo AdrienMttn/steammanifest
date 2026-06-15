@@ -124,6 +124,16 @@ func check() bool {
 	return !os.IsNotExist(err1) && !os.IsNotExist(err2)
 }
 
+func checkTempDir() {
+	if _, err := os.Stat("temp"); os.IsNotExist(err) {
+		err := os.Mkdir("temp", 0755)
+		if err != nil {
+			config.WriteLog("Error creating temp directory: " + err.Error())
+			log.Fatalf("Error creating temp directory: %v", err)
+		}
+	}
+}
+
 func initialLumaCore() lumacore {
 	return lumacore{
 		isEnabled: check(),
@@ -132,12 +142,12 @@ func initialLumaCore() lumacore {
 
 func (l lumacore) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	// Is it a key press?
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			return initialSettings(), nil
 		case "enter", "space":
+			checkTempDir()
 			switch {
 				case l.isEnabled:
 					if l.disable() {
@@ -205,6 +215,7 @@ func (l lumacore) enable() bool {
 	err = os.WriteFile(zipPath, file, 0644)
 	zipReader, err := zip.OpenReader(zipPath)
 	if err != nil {
+		config.WriteLog("Error opening zip file: " + err.Error())
 		log.Fatalf("Error opening zip file: %v", err)
 		return false
 	}
@@ -212,17 +223,20 @@ func (l lumacore) enable() bool {
 	for _, file := range zipReader.File {
 		srcFile, err := file.Open()
 		if err != nil {
+				config.WriteLog("Error opening file in zip: " + err.Error())
 				log.Fatalf("Error opening file in zip: %v", err)
 				return false
 		}
 		
 		outFile, err := os.Create(destPath + file.Name)
 		if err != nil {
+				config.WriteLog("Error creating file: " + err.Error())
 				log.Fatalf("Error creating file: %v", err)
 				return false
 		}
 		defer outFile.Close()
 		if _, err := io.Copy(outFile, srcFile); err != nil {
+			config.WriteLog("Error copying file: " + err.Error())
 			log.Fatalf("Error copying file: %v", err)
 			return false
 		}
@@ -231,6 +245,7 @@ func (l lumacore) enable() bool {
 	zipReader.Close()
 	err = os.Remove(zipPath)
 	if err != nil {
+		config.WriteLog("Error removing zip file: " + err.Error())
 		log.Fatalf("Error removing zip file: %v", err)
 		return false
 	}
@@ -246,6 +261,7 @@ func (l lumacore) enable() bool {
       cmd = exec.Command("steam")
   }
   if err := cmd.Start(); err != nil {
+			config.WriteLog("restartSteam: start error: " + err.Error())
 			log.Fatalf("restartSteam: start error: %s", err)
       return false
   }
@@ -268,6 +284,7 @@ func (l lumacore) disable() bool {
 	for _, dll := range dllToDelete {
 		err := os.Remove(destPath + dll)
 		if err != nil {
+			config.WriteLog(fmt.Sprintf("Error removing %s: %v", dll, err))
 			log.Fatalf("Error removing %s: %v", dll, err)
 			return false
 		}
@@ -284,6 +301,7 @@ func (l lumacore) disable() bool {
       cmd = exec.Command("steam")
   }
   if err := cmd.Start(); err != nil {
+			config.WriteLog("restartSteam: start error: " + err.Error())
 			log.Fatalf("restartSteam: start error: %s", err)
       return false
   }

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"SteamManifest/config"
@@ -14,7 +14,8 @@ func main() {
     config.LoadConfig()
     p := tea.NewProgram(InitialMenu())
     if _, err := p.Run(); err != nil {
-        fmt.Printf("Alas, there's been an error: %v", err)
+        config.WriteLog("Alas, there's been an error: "+ err.Error())
+        log.Fatalf("Alas, there's been an error: %v", err)
         os.Exit(1)
     }
 }

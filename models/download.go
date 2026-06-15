@@ -250,7 +250,9 @@ func (d download) GameExist(appID string) bool {
 	return resp.StatusCode == 200
 }
 
+
 func (d download) downloadManifest(appID string) (bool) {
+	checkTempDir()
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://walftech.com/proxy.php?id="+appID, nil)
 	if err != nil {
@@ -333,6 +335,7 @@ func (d download) restartSteam() bool {
       cmd = exec.Command("steam")
   }
   if err := cmd.Start(); err != nil {
+			config.WriteLog("Erreur lors du redémarrage de Steam: " + err.Error())
 			log.Fatalf("Erreur lors du redémarrage de Steam: %v", err)
       return false
   }
