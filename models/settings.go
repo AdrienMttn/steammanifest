@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -204,25 +205,25 @@ func (l lumacore) enable() bool {
 	err = os.WriteFile(zipPath, file, 0644)
 	zipReader, err := zip.OpenReader(zipPath)
 	if err != nil {
-		fmt.Printf("Error opening zip file: %v", err)
+		log.Fatalf("Error opening zip file: %v", err)
 		return false
 	}
 	destPath := config.AppConfig.SteamPath
 	for _, file := range zipReader.File {
 		srcFile, err := file.Open()
 		if err != nil {
-				fmt.Printf("Error opening file in zip: %v", err)
+				log.Fatalf("Error opening file in zip: %v", err)
 				return false
 		}
 		
 		outFile, err := os.Create(destPath + file.Name)
 		if err != nil {
-				fmt.Printf("Error creating file: %v", err)
+				log.Fatalf("Error creating file: %v", err)
 				return false
 		}
 		defer outFile.Close()
 		if _, err := io.Copy(outFile, srcFile); err != nil {
-			fmt.Printf("Error copying file: %v", err)
+			log.Fatalf("Error copying file: %v", err)
 			return false
 		}
 		
@@ -230,7 +231,7 @@ func (l lumacore) enable() bool {
 	zipReader.Close()
 	err = os.Remove(zipPath)
 	if err != nil {
-		fmt.Printf("Error removing zip file: %v", err)
+		log.Fatalf("Error removing zip file: %v", err)
 		return false
 	}
 	// Redémarrer Steam pour appliquer les changements
@@ -245,7 +246,7 @@ func (l lumacore) enable() bool {
       cmd = exec.Command("steam")
   }
   if err := cmd.Start(); err != nil {
-      fmt.Println("restartSteam: start error:", err)
+			log.Fatalf("restartSteam: start error: %s", err)
       return false
   }
 	return true
@@ -267,7 +268,7 @@ func (l lumacore) disable() bool {
 	for _, dll := range dllToDelete {
 		err := os.Remove(destPath + dll)
 		if err != nil {
-			fmt.Printf("Error removing file: %v", err)
+			log.Fatalf("Error removing %s: %v", dll, err)
 			return false
 		}
 	}
@@ -283,7 +284,7 @@ func (l lumacore) disable() bool {
       cmd = exec.Command("steam")
   }
   if err := cmd.Start(); err != nil {
-      fmt.Println("restartSteam: start error:", err)
+			log.Fatalf("restartSteam: start error: %s", err)
       return false
   }
 	return true

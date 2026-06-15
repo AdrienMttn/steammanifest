@@ -5,6 +5,7 @@ import (
 	"archive/zip"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -332,7 +333,7 @@ func (d download) restartSteam() bool {
       cmd = exec.Command("steam")
   }
   if err := cmd.Start(); err != nil {
-      fmt.Println("restartSteam: start error:", err)
+			log.Fatalf("Erreur lors du redémarrage de Steam: %v", err)
       return false
   }
   return true
