@@ -1,6 +1,7 @@
 package models
 
 import (
+	"SteamManifest/config"
 	"archive/zip"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"runtime"
 	"time"
 
+	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"charm.land/lipgloss/v2"
 )
@@ -20,6 +22,83 @@ var disableStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff0000"))
 type settings struct {
 	choices []string // items on the to-do list
 	cursor  int      // which to-do list item our cursor is pointing at
+}
+
+type SteamPath struct {
+	textInput    textinput.Model
+	submited     bool
+	errorMessage string
+	errorStyle   lipgloss.Style
+}
+
+func initialSteamPath() SteamPath {
+	textInputModel := textinput.New()
+	textInputModel.Placeholder = "Enter the Steam Path"
+	textInputModel.Focus()
+	textInputModel.CharLimit = 156
+	textInputModel.SetWidth(40)
+	textInputModel.SetValue(config.AppConfig.SteamPath)
+	return SteamPath{
+		textInput: textInputModel,
+	}
+}
+
+func (st SteamPath) checkSteamPath() bool {
+	steamPath := st.textInput.Value()
+	// Vérifier si le chemin existe
+	if _, err := os.Stat(steamPath); os.IsNotExist(err) {
+		return false
+	}
+	// Vérifier si le fichier steam.exe existe dans le chemin
+	if _, err := os.Stat(steamPath + "\\steam.exe"); os.IsNotExist(err) {
+		return false
+	}
+	return true
+}
+
+func (st SteamPath) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	case tea.KeyPressMsg:
+		switch msg.String() {
+			case "esc":
+				return initialSettings(), nil
+			case "enter":
+				if st.checkSteamPath() {
+					config.AppConfig.SteamPath = st.textInput.Value()
+					if config.SaveConfig() {
+						st.errorMessage = "Steam Path Updated Successfully"
+						st.errorStyle = activeStyle
+					} else {
+						st.errorMessage = "Failed to save Steam Path"
+						st.errorStyle = disableStyle
+					}
+				}else {
+					st.errorMessage = "Invalid Steam Path"
+					st.errorStyle = disableStyle
+				}
+		}
+		
+	}
+	st.textInput, cmd = st.textInput.Update(msg)
+	return st, cmd
+}
+
+func (st SteamPath) View() tea.View {
+	var c *tea.Cursor
+	if !st.textInput.VirtualCursor() {
+		c = st.textInput.Cursor()
+		c.Y += lipgloss.Height(art)
+	}
+	s := ""
+	s = lipgloss.JoinVertical(lipgloss.Top, titleStyle.Render(art)+"\n\n",st.textInput.View())
+	if st.errorMessage != "" {
+		s += st.errorStyle.Render(st.errorMessage) + "\n\n"
+	}
+	s += Footer() + "\n"
+	v := tea.NewView(s)
+	v.Cursor = c
+	return v
 }
 
 type lumacore struct {
@@ -38,7 +117,7 @@ type lumacoreResponse struct {
 }
 
 func check() bool {
-	destPath := "C:\\Program Files (x86)\\Steam/"
+	destPath := config.AppConfig.SteamPath
 	_, err1 := os.Stat(destPath + "LumaCore.dll")
 	_, err2 := os.Stat(destPath + "dwmapi.dll")
 	return !os.IsNotExist(err1) && !os.IsNotExist(err2)
@@ -84,6 +163,7 @@ func (l lumacore) View() tea.View {
 	}
 	str := titleStyle.Render(art) + "\n\n"
 	str += fmt.Sprintf(" [%s] %s\n\n", style.Render(checked), style.Render(text))
+	str += Footer() + "\n"
 	return tea.NewView(str)
 }
 func (l lumacore) enable() bool {
@@ -127,7 +207,7 @@ func (l lumacore) enable() bool {
 		fmt.Printf("Error opening zip file: %v", err)
 		return false
 	}
-	destPath := "C:\\Program Files (x86)\\Steam/"
+	destPath := config.AppConfig.SteamPath
 	for _, file := range zipReader.File {
 		srcFile, err := file.Open()
 		if err != nil {
@@ -157,7 +237,7 @@ func (l lumacore) enable() bool {
 	var cmd *exec.Cmd
   switch runtime.GOOS {
   case "windows":
-      steamPath := `C:\Program Files (x86)\Steam\steam.exe`
+      steamPath := config.AppConfig.SteamPath + "steam.exe"
       cmd = exec.Command(steamPath)
   case "darwin":
       cmd = exec.Command("open", "-a", "Steam")
@@ -183,7 +263,7 @@ func (l lumacore) disable() bool {
   }
 	time.Sleep(1000 * time.Millisecond)
 	dllToDelete := []string{"LumaCore.dll","dwmapi.dll"}
-	destPath := "C:\\Program Files (x86)\\Steam/"
+	destPath := config.AppConfig.SteamPath
 	for _, dll := range dllToDelete {
 		err := os.Remove(destPath + dll)
 		if err != nil {
@@ -195,7 +275,7 @@ func (l lumacore) disable() bool {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
   case "windows":
-      steamPath := `C:\Program Files (x86)\Steam\steam.exe`
+      steamPath := config.AppConfig.SteamPath+`steam.exe`
       cmd = exec.Command(steamPath)
   case "darwin":
       cmd = exec.Command("open", "-a", "Steam")
@@ -243,7 +323,7 @@ func (s settings) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "enter", "space":
 			switch s.cursor {
 			case 0:
-				return initialDownload(), nil
+				return initialSteamPath(), nil
 			case 1:
 				return initialLumaCore(), nil
 			}
@@ -273,6 +353,7 @@ func (s settings) View() tea.View {
 		// Render the row
 		str += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
 	}
+	str += Footer() + "\n"
 	// Send the UI for rendering
 	return tea.NewView(str)
 }
@@ -283,4 +364,8 @@ func (s settings) Init() tea.Cmd {
 
 func (l lumacore) Init() tea.Cmd {
 	return nil
+}
+
+func (st SteamPath) Init() tea.Cmd {
+	return textinput.Blink
 }

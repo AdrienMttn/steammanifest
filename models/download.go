@@ -1,6 +1,7 @@
 package models
 
 import (
+	"SteamManifest/config"
 	"archive/zip"
 	"fmt"
 	"io"
@@ -196,7 +197,7 @@ func (d download) View() tea.View {
 	}else {
 		s = lipgloss.JoinVertical(lipgloss.Top, titleStyle.Render(art)+"\n\n",d.ti.View())
 	}
-	
+	s += Footer() + "\n"
 	v := tea.NewView(s)
 	v.Cursor = c
 	return v
@@ -281,7 +282,7 @@ func (d download) unzipManifest(appID string) bool {
 	}
 	defer zipReader.Close()
 	targetName := appID + ".lua"
-	destPath := "C:\\Program Files (x86)\\Steam\\config\\stplug-in/" + targetName
+	destPath := config.AppConfig.SteamPath+"config\\stplug-in/" + targetName
 	for _, file := range zipReader.File {
 		if file.Name == targetName {
 			srcFile, err := file.Open()
@@ -323,7 +324,7 @@ func (d download) restartSteam() bool {
   var cmd *exec.Cmd
   switch runtime.GOOS {
   case "windows":
-      steamPath := `C:\Program Files (x86)\Steam\steam.exe`
+      steamPath := config.AppConfig.SteamPath+`steam.exe`
       cmd = exec.Command(steamPath)
   case "darwin":
       cmd = exec.Command("open", "-a", "Steam")

@@ -8,12 +8,13 @@ import (
 )
 
 
-var titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff0000")).AlignHorizontal(lipgloss.Center).Padding(0, 1, 0, 1)
+var titleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff0000")).AlignHorizontal(lipgloss.Center).Padding(0, 0, 2, 1)
 var activeStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#00ff00"))
 
 var art = `┏┓┏┳┓┏┓┏┓┳┳┓  ┳┳┓┏┓┳┓┳┏┓┏┓┏┓┏┳┓
 ┗┓ ┃ ┣ ┣┫┃┃┃  ┃┃┃┣┫┃┃┃┣ ┣ ┗┓ ┃ 
 ┗┛ ┻ ┗┛┛┗┛ ┗  ┛ ┗┛┗┛┗┻┻ ┗┛┗┛ ┻ `
+
 
 type menu struct {
 	choices []string // items on the to-do list
@@ -83,7 +84,9 @@ func (m menu) View() tea.View {
 
 		// Render the row
 		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+		
 	}
+	s += Footer() + "\n"
 	// Send the UI for rendering
 	return tea.NewView(s)
 }
@@ -91,4 +94,10 @@ func (m menu) View() tea.View {
 func (m menu) Init() tea.Cmd {
 	// Just return `nil`, which means "no I/O right now, please."
 	return nil
+}
+
+func Footer() string {
+    return lipgloss.NewStyle().
+        Foreground(lipgloss.Color("241")).PaddingTop(2).
+        Render(" ______________________________________\n| ESC • Back     |     ENTER • Confirm |")
 }
