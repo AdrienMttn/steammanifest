@@ -94,7 +94,7 @@ func (st SteamPath) View() tea.View {
 	s := ""
 	s = lipgloss.JoinVertical(lipgloss.Top, titleStyle.Render(art)+"\n\n",st.textInput.View())
 	if st.errorMessage != "" {
-		s += st.errorStyle.Render(st.errorMessage) + "\n\n"
+		s += st.errorStyle.Render(st.errorMessage)
 	}
 	s += Footer() + "\n"
 	v := tea.NewView(s)
