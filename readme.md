@@ -22,6 +22,7 @@
     - [Finding an App ID](#finding-an-app-id)
     - [Troubleshooting Failed Downloads](#troubleshooting-failed-downloads)
   - [🐛 Troubleshooting](#-troubleshooting)
+  - [TODO ✅](#todo-)
   - [⭐ Star History](#-star-history)
 
 ---
@@ -126,6 +127,15 @@ path = C:/Program Files (x86)/Steam
 **Settings not saving**
 - Check file permissions for `app.ini`
 - Ensure the application has write access to its directory
+
+---
+
+## TODO ✅
+
+- [ ] Add support for Linux and macOS
+- [ ] Implement denuvo bypass for manifest downloads
+- [ ] Implement multiplayer fix using [online-fix.me](https://online-fix.me/)
+- [ ] Add a feature to update manifests automatically
 
 ---
 
